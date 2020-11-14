@@ -1,13 +1,20 @@
 // utils.rs
-pub(crate) fn extract_digits(s: &str) -> (&str, &str) {
-    let digits_end = s
+pub(crate) fn take_while(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
+    let end = s
         .char_indices()
-        .find_map(|(idx, c)| if c.is_ascii_digit() { None } else { Some(idx) }) //  || closures
-        .unwrap_or_else(|| s.len()); // 如果 Ok，就直接返回，否则用括号里面的函数计算
+        .find_map(|(idx, c)| if accept(c) { None } else { Some(idx) })
+        .unwrap_or_else(|| s.len());
+    let s1 = &s[..end];
+    let s2 = &s[end..];
+    (s2, s1)
+}
 
-    let digits = &s[..digits_end];
-    let remainder = &s[digits_end..];
-    (remainder, digits)
+pub(crate) fn extract_whitespace(s: &str) -> (&str, &str) {
+    take_while(|c| c == ' ', s)
+}
+
+pub(crate) fn extract_digits(s: &str) -> (&str, &str) {
+    take_while(|c| c.is_ascii_digit(), s)
 }
 
 pub(crate) fn extract_op(s: &str) -> (&str, &str) {
