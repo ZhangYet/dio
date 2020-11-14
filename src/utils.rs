@@ -45,7 +45,7 @@ mod tests {
     }
 
     // extract_op test
-     #[test]
+    #[test]
     fn extract_plus() {
         assert_eq!(extract_op("+2"), ("2", "+"));
     }
