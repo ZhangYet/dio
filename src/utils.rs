@@ -1,12 +1,12 @@
 // utils.rs
-pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> &'b str { // 这个语法见 https://doc.rust-lang.org/book/ch10-03-lifetime-syntax.html#lifetime-annotations-in-function-signatures
+pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> &'b str {
+    // 这个语法见 https://doc.rust-lang.org/book/ch10-03-lifetime-syntax.html#lifetime-annotations-in-function-signatures
     if s.starts_with(starting_text) {
         &s[starting_text.len()..]
     } else {
         panic!("expected {}", starting_text);
     }
 }
-
 
 pub(crate) fn take_while(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
     let end = s
@@ -47,6 +47,15 @@ pub(crate) fn extract_ident(s: &str) -> (&str, &str) {
     } else {
         (s, "")
     }
+}
+
+pub(crate) fn extract_op(s: &str) -> (&str, &str) {
+    match &s[0..1] {
+        "+" | "-" | "*" | "/" => {}
+        _ => panic!("bad operator"),
+    }
+
+    (&s[1..], &s[0..1])
 }
 
 #[cfg(test)]
