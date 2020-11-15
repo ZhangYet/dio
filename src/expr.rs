@@ -35,10 +35,9 @@ impl Op {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Expr {
-    pub lhs: Number,
-    pub rhs: Number,
-    pub op: Op,
+pub enum Expr {
+    Number(Number),
+    Operation { lhs: Number, rhs: Number, op: Op },
 }
 
 impl Expr {
@@ -78,7 +77,7 @@ mod tests {
     fn parse_number() {
         assert_eq!(Number::new("123"), ("", Number(123)));
     }
-    
+
     // op
     #[test]
     fn parse_add_op() {
