@@ -5,6 +5,7 @@ use crate::utils;
 use crate::val::Val;
 use binding_usage::BindingUsage;
 use block::Block;
+use crate::env::Env;
 
 #[derive(Debug, PartialEq)]
 pub struct Number(pub i32);
@@ -85,7 +86,8 @@ impl Expr {
 
                 Ok(Val::Number(result))
             }
-	    _ => todo!()
+	    Self::BindingUsage(binding_usage) => binding_usage.eval(env),
+	    _ => todo!(),
         }
     }
 }
@@ -163,8 +165,8 @@ mod tests {
                 rhs: Number(10),
                 op: Op::Add,
             }
-            .eval(),
-            Val::Number(20),
+            .eval(&Env::default()),
+            Ok(Val::Number(20)),
         );
     }
 
@@ -176,8 +178,8 @@ mod tests {
                 rhs: Number(5),
                 op: Op::Sub,
             }
-            .eval(),
-            Val::Number(-4),
+            .eval(&Env::default()),
+            Ok(Val::Number(-4)),
         );
     }
 
@@ -189,8 +191,8 @@ mod tests {
                 rhs: Number(6),
                 op: Op::Mul,
             }
-            .eval(),
-            Val::Number(30),
+            .eval(&Env::default()),
+            Ok(Val::Number(30)),
         );
     }
 
@@ -202,10 +204,11 @@ mod tests {
                 rhs: Number(20),
                 op: Op::Div,
             }
-            .eval(),
-            Val::Number(10),
+            .eval(&Env::default()),
+            Ok(Val::Number(10)),
         );
     }
+
 
     #[test]
     fn parse_binding_usage() {
