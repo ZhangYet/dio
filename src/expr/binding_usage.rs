@@ -45,11 +45,25 @@ mod tests {
             Err("binding with name ‘i_dont_exist’ does not exist".to_string()),
         );
     }
+
+    #[test]
+    fn eval_binding_usage() {
+        let mut env = Env::default();
+        env.store_binding("ten".to_string(), Val::Number(10));
+
+        assert_eq!(
+            Expr::BindingUsage(BindingUsage {
+                name: "ten".to_string(),
+            })
+            .eval(&env),
+            Ok(Val::Number(10)),
+        );
+    }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct BindingUsage {
-    name: String,
+    pub name: String,
 }
 
 impl BindingUsage {
