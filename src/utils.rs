@@ -1,24 +1,15 @@
-// utils.rs
-pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str, String> {
-    // 这个语法见 https://doc.rust-lang.org/book/ch10-03-lifetime-syntax.html#lifetime-annotations-in-function-signatures
-    if s.starts_with(starting_text) {
-        Ok(&s[starting_text.len()..])
-    } else {
-        Err(format!("expected {}", starting_text))
-    }
-}
-
-pub(crate) fn take_while(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
-    let end = s
+fn take_while(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
+    let extracted_end = s
         .char_indices()
         .find_map(|(idx, c)| if accept(c) { None } else { Some(idx) })
         .unwrap_or_else(|| s.len());
-    let s1 = &s[..end];
-    let s2 = &s[end..];
-    (s2, s1)
+
+    let extracted = &s[..extracted_end];
+    let remainder = &s[extracted_end..];
+    (remainder, extracted)
 }
 
-pub(crate) fn take_while1(
+fn take_while1(
     accept: impl Fn(char) -> bool,
     s: &str,
     error_msg: String,
@@ -32,6 +23,10 @@ pub(crate) fn take_while1(
     }
 }
 
+pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
+    take_while1(|c| c.is_ascii_digit(), s, "expected digits".to_string())
+}
+
 const WHITESPACE: &[char] = &[' ', '\n'];
 
 pub(crate) fn extract_whitespace(s: &str) -> (&str, &str) {
@@ -42,21 +37,8 @@ pub(crate) fn extract_whitespace1(s: &str) -> Result<(&str, &str), String> {
     take_while1(
         |c| WHITESPACE.contains(&c),
         s,
-        "expected a space".to_string(),
+        "expected whitespace".to_string(),
     )
-}
-
-pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
-    take_while1(|c| c.is_ascii_digit(), s, "expected digits".to_string())
-}
-
-pub(crate) fn extract_op(s: &str) -> (&str, &str) {
-    match &s[0..1] {
-        "+" | "-" | "*" | "/" => {}
-        _ => panic!("bad operator"),
-    }
-
-    (&s[1..], &s[0..1])
 }
 
 pub(crate) fn extract_ident(s: &str) -> Result<(&str, &str), String> {
@@ -73,11 +55,18 @@ pub(crate) fn extract_ident(s: &str) -> Result<(&str, &str), String> {
     }
 }
 
+pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str, String> {
+    if s.starts_with(starting_text) {
+        Ok(&s[starting_text.len()..])
+    } else {
+        Err(format!("expected {}", starting_text))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // extract_digits test
     #[test]
     fn extract_one_digit() {
         assert_eq!(extract_digits("1+2"), Ok(("+2", "1")));
@@ -89,24 +78,33 @@ mod tests {
     }
 
     #[test]
+    fn do_not_extract_digits_when_input_is_invalid() {
+        assert_eq!(extract_digits("abcd"), Err("expected digits".to_string()));
+    }
+
+    #[test]
     fn extract_digits_with_no_remainder() {
         assert_eq!(extract_digits("100"), Ok(("", "100")));
     }
 
     #[test]
-    fn do_not_extract_digits_when_input_is_invalid() {
-        assert_eq!(extract_digits("abcd"), Err("expected digits".to_string()));
+    fn extract_spaces() {
+        assert_eq!(extract_whitespace("    1"), ("1", "    "));
+    }
+
+    #[test]
+    fn extract_newlines_or_spaces() {
+        assert_eq!(extract_whitespace(" \n   \n\nabc"), ("abc", " \n   \n\n"));
     }
 
     #[test]
     fn do_not_extract_spaces1_when_input_does_not_start_with_them() {
         assert_eq!(
             extract_whitespace1("blah"),
-            Err("expected a space".to_string()),
+            Err("expected whitespace".to_string()),
         );
     }
 
-    // indent
     #[test]
     fn extract_alphabetic_ident() {
         assert_eq!(extract_ident("abcdEFG stop"), Ok((" stop", "abcdEFG")));
@@ -117,6 +115,7 @@ mod tests {
         assert_eq!(extract_ident("foobar1()"), Ok(("()", "foobar1")));
     }
 
+    #[test]
     fn cannot_extract_ident_beginning_with_number() {
         assert_eq!(
             extract_ident("123abc"),
@@ -124,15 +123,8 @@ mod tests {
         );
     }
 
-    // tag
     #[test]
     fn tag_word() {
         assert_eq!(tag("let", "let a"), Ok(" a"));
-    }
-
-    // whitespace
-    #[test]
-    fn extract_newlines_or_spaces() {
-        assert_eq!(extract_whitespace(" \n   \n\nabc"), ("abc", " \n   \n\n"));
     }
 }

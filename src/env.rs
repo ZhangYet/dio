@@ -8,6 +8,13 @@ pub(crate) struct Env<'parent> {
 }
 
 impl<'parent> Env<'parent> {
+    pub(crate) fn create_child(&'parent self) -> Self {
+        Self {
+            bindings: HashMap::new(),
+            parent: Some(self),
+        }
+    }
+
     pub(crate) fn store_binding(&mut self, name: String, val: Val) {
         self.bindings.insert(name, val);
     }
@@ -22,12 +29,5 @@ impl<'parent> Env<'parent> {
             self.parent
                 .and_then(|parent| parent.get_binding_value_without_error_msg(name))
         })
-    }
-
-    pub(crate) fn create_child(&'parent self) -> Self {
-        Self {
-            bindings: HashMap::new(),
-            parent: Some(self),
-        }
     }
 }

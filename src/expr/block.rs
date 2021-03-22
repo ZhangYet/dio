@@ -1,17 +1,15 @@
 use crate::env::Env;
-use crate::expr::Expr;
-use crate::expr::Number;
 use crate::stmt::Stmt;
 use crate::utils;
 use crate::val::Val;
 
 #[derive(Debug, PartialEq)]
-pub struct Block {
-    pub stmts: Vec<Stmt>,
+pub(crate) struct Block {
+    pub(super) stmts: Vec<Stmt>,
 }
 
 impl Block {
-    pub fn new(s: &str) -> Result<(&str, Self), String> {
+    pub(super) fn new(s: &str) -> Result<(&str, Self), String> {
         let s = utils::tag("{", s)?;
         let (s, _) = utils::extract_whitespace(s);
 
@@ -23,7 +21,7 @@ impl Block {
             stmts.push(stmt);
 
             let (new_s, _) = utils::extract_whitespace(s);
-            s = new_s
+            s = new_s;
         }
 
         let (s, _) = utils::extract_whitespace(s);
@@ -32,20 +30,20 @@ impl Block {
         Ok((s, Block { stmts }))
     }
 
-    pub(crate) fn eval(&self, env: &Env) -> Result<Val, String> {
-	if self.stmts.is_empty() {
+    pub(super) fn eval(&self, env: &Env) -> Result<Val, String> {
+        if self.stmts.is_empty() {
             return Ok(Val::Unit);
         }
 
-        let mut env = env.create_child();
+        let mut child_env = env.create_child();
 
         let stmts_except_last = &self.stmts[..self.stmts.len() - 1];
         for stmt in stmts_except_last {
-            stmt.eval(&mut env)?;
+            stmt.eval(&mut child_env)?;
         }
 
         // We can unwrap safely here because we have already checked whether self.stmts is empty.
-        self.stmts.last().unwrap().eval(&mut env)
+        self.stmts.last().unwrap().eval(&mut child_env)
     }
 }
 
@@ -146,26 +144,6 @@ mod tests {
             }
             .eval(&Env::default()),
             Ok(Val::Number(1)),
-        );
-    }
-
-     #[test]
-    fn eval_binding_def() {
-        assert_eq!(
-            Stmt::BindingDef(BindingDef {
-                name: "whatever".to_string(),
-                val: Expr::Number(Number(-10)),
-            })
-            .eval(&mut Env::default()),
-            Ok(Val::Unit),
-        );
-    }
-
-    #[test]
-    fn eval_expr() {
-        assert_eq!(
-            Stmt::Expr(Expr::Number(Number(5))).eval(&mut Env::default()),
-            Ok(Val::Number(5)),
         );
     }
 
