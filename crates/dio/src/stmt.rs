@@ -1,11 +1,13 @@
 use crate::binding_def::BindingDef;
 use crate::env::Env;
 use crate::expr::Expr;
+use crate::func_def::FuncDef;
 use crate::val::Val;
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum Stmt {
     BindingDef(BindingDef),
+    FuncDef(FuncDef),
     Expr(Expr),
 }
 
@@ -13,6 +15,7 @@ impl Stmt {
     pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         BindingDef::new(s)
             .map(|(s, binding_def)| (s, Self::BindingDef(binding_def)))
+	    .or_else(|_| FuncDef::new(s).map(|(s, func_def)| (s, Self::FuncDef(func_def))))
             .or_else(|_| Expr::new(s).map(|(s, expr)| (s, Self::Expr(expr))))
     }
 
@@ -22,6 +25,7 @@ impl Stmt {
                 binding_def.eval(env)?;
                 Ok(Val::Unit)
             }
+	    Self::FuncDef(_) => todo!(),
             Self::Expr(expr) => expr.eval(env),
         }
     }
@@ -30,7 +34,8 @@ impl Stmt {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expr::{Number, Op};
+    use crate::expr::{BindingUsage, Number, Op, Block, Expr};
+
 
     #[test]
     fn parse_binding_def() {
@@ -53,8 +58,8 @@ mod tests {
             Ok((
                 "",
                 Stmt::Expr(Expr::Operation {
-                    lhs: Number(1),
-                    rhs: Number(1),
+                    lhs: Box::new(Expr::Number(Number(1))),
+                    rhs: Box::new(Expr::Number(Number(1))),
                     op: Op::Add,
                 }),
             )),
