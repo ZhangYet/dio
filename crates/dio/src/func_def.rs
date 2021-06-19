@@ -17,10 +17,11 @@ impl FuncDef {
         let (s, name) = utils::extract_ident(s)?;
         let (s, _) = utils::extract_whitespace(s);
 
-	let (s, params) = utils::sequence(
-	    |s| utils::extract_ident(s).map(|(s, ident)| (s, ident.to_string())),
+        let (s, params) = utils::sequence(
+            |s| utils::extract_ident(s).map(|(s, ident)| (s, ident.to_string())),
+            utils::extract_whitespace,
             s,
-	 )?;
+        )?;
 
         let s = utils::tag("=>", s)?;
         let (s, _) = utils::extract_whitespace(s);
