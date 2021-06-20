@@ -1,27 +1,44 @@
-use crate::lexer::SyntaxKind;
-use crate::syntax::DioLanguage;
+use crate::lexer::{Lexer, SyntaxKind};
+use crate::syntax::{DioLanguage, SyntaxNode};
 use logos::Logos;
 use rowan::{GreenNode, GreenNodeBuilder, Language};
+use std::iter::Peekable;
 
-pub(crate) struct Parser<'a> {
-    lexer: logos::Lexer<'a, SyntaxKind>,
+pub struct Parser<'a> {
+    lexer: Peekable<Lexer<'a>>,
     builder: GreenNodeBuilder<'static>,
 }
 
-pub(crate) struct Parse {
+pub struct Parse {
     green_node: GreenNode,
 }
 
+impl Parse {
+    pub fn debug_tree(&self) -> String {
+        let syntax_node = SyntaxNode::new_root(self.green_node.clone());
+        let formatted = format!("{:#?}", syntax_node);
+
+        // We cut off the last byte because formatting the SyntaxNode adds on a newline at the end.
+        formatted[0..formatted.len() - 1].to_string()
+    }
+}
+
 impl<'a> Parser<'a> {
-    pub(crate) fn new(input: &'a str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self {
-            lexer: SyntaxKind::lexer(input),
+            lexer: Lexer::new(input).peekable(),
 	    builder: GreenNodeBuilder::new(),
         }
     }
 
-    pub(crate) fn parse(mut self) -> Parse {
-        self.start_node(SyntaxKind::Root);
+    pub fn parse(mut self) -> Parse {
+	self.start_node(SyntaxKind::Root);
+
+	match self.peek() {
+            Some(SyntaxKind::Number) | Some(SyntaxKind::Ident) => self.bump(),
+            _ => {}
+        }
+
         self.finish_node();
 
         Parse {
@@ -35,5 +52,53 @@ impl<'a> Parser<'a> {
 
     fn finish_node(&mut self) {
         self.builder.finish_node();
+    }
+
+    fn peek(&mut self) -> Option<SyntaxKind> {
+        self.lexer.peek().map(|(kind, _)| *kind)
+    }
+
+    fn bump(&mut self) {
+        let (kind, text) = self.lexer.next().unwrap();
+
+        self.builder
+            .token(DioLanguage::kind_to_raw(kind), text.into());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::syntax::SyntaxNode;
+    use expect_test::{expect, Expect};
+
+    fn check(input: &str, expected_tree: Expect) {
+	let parse = Parser::new(input).parse();
+        expected_tree.assert_eq(&parse.debug_tree());
+    }
+
+    #[test]
+    fn parse_nothing() {
+        check("", expect![[r#"Root@0..0"#]]);
+    }
+
+     #[test]
+    fn parse_number() {
+        check(
+            "123",
+            expect![[r#"
+Root@0..3
+  Number@0..3 "123""#]],
+        );
+    }
+
+    #[test]
+    fn parse_binding_usage() {
+        check(
+            "counter",
+            expect![[r#"
+Root@0..7
+  Ident@0..7 "counter""#]],
+        );
     }
 }
