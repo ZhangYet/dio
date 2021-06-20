@@ -1,28 +1,12 @@
 use logos::Logos;
 use num_derive::{FromPrimitive, ToPrimitive};
 
-enum Op {
-    Add,
-    Sub,
-    Mul,
-    Div,
-}
-
-impl Op {
-    fn binding_power(&self) -> (u8, u8) {
-        match self {
-            Self::Add | Self::Sub => (1, 2),
-            Self::Mul | Self::Div => (3, 4),
-        }
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Logos, FromPrimitive, ToPrimitive)]
 pub(crate) enum SyntaxKind {
     Root,
 
     BinOp,
-	
+    
     #[regex(" +")]
     Whitespace,
 
@@ -74,8 +58,10 @@ mod tests {
     use super::*;
 
     fn check(input: &str, kind: SyntaxKind) {
-	let mut lexer = Lexer::new(input);
-        assert_eq!(lexer.next(), Some((kind, input)));
+        let mut lexer = SyntaxKind::lexer(input);
+
+        assert_eq!(lexer.next(), Some(kind));
+        assert_eq!(lexer.slice(), input);
     }
 
     #[test]
