@@ -16,7 +16,7 @@ pub(crate) enum SyntaxKind {
     #[token("let")]
     LetKw,
 
-    #[regex("[A-Za-z][A-Za-z0-9]+")]
+    #[regex("[A-Za-z][A-Za-z0-9]*")]
     Ident,
 
     #[regex("[0-9]+")]
@@ -82,6 +82,11 @@ mod tests {
     #[test]
     fn lex_alphabetic_identifier() {
         check("abcd", SyntaxKind::Ident);
+    }
+
+    #[test]
+    fn lex_single_char_identifier() {
+        check("x", SyntaxKind::Ident);
     }
 
     #[test]
