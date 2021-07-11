@@ -5,7 +5,15 @@ use num_derive::{FromPrimitive, ToPrimitive};
 pub(crate) enum SyntaxKind {
     Root,
 
-    BinOp,
+    BinaryExpr,
+
+    PrefixExpr,
+
+    #[token("(")]
+    LParen,
+
+    #[token(")")]
+    RParen,
     
     #[regex(" +")]
     Whitespace,
@@ -63,6 +71,17 @@ mod tests {
         assert_eq!(lexer.next(), Some(kind));
         assert_eq!(lexer.slice(), input);
     }
+
+    #[test]
+    fn lex_left_parenthesis() {
+        check("(", SyntaxKind::LParen);
+    }
+
+    #[test]
+    fn lex_right_parenthesis() {
+        check(")", SyntaxKind::RParen);
+    }
+
 
     #[test]
     fn lex_spaces() {
